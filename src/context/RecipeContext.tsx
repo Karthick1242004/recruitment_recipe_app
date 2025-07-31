@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
 
 interface RecipeContextType {
   globalSettings: { theme: string };
@@ -10,17 +10,17 @@ const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [globalSettings, setGlobalSettings] = useState({ theme: 'light' });
 
-  const updateGlobalSettings = (newSettings: any) => {
+  const updateGlobalSettings = useCallback((newSettings: any) => {
     setGlobalSettings(prev => ({ ...prev, ...newSettings }));
     console.log('Attempting to update global settings...', newSettings);
-  };
+  }, []);
 
   const memoizedValue = useMemo(
     () => ({
       globalSettings,
       updateGlobalSettings,
     }),
-    []
+    [globalSettings, updateGlobalSettings]
   );
 
   return (

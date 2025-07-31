@@ -3,35 +3,40 @@ import { RecipeFormData } from '../RecipeBuilder';
 
 interface StepProps {
   data: RecipeFormData;
-  updateData: (data: any) => void;
+  onDataChange: (data: any) => void;
 }
 
-const InstructionsStep: React.FC<StepProps> = ({ data, updateData }) => {
-  const [instructions, setInstructions] = useState(['']);
+const InstructionsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
+  const [instructions, setInstructions] = useState(
+    data.instructions && data.instructions.length > 0 
+      ? data.instructions.map(inst => inst.step) 
+      : ['']
+  );
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
 
   useEffect(() => {
-    if (typingTimeout) {
-      clearTimeout(typingTimeout);
-    }
-    () => {
+    return () => {
       if (typingTimeout) clearTimeout(typingTimeout);
-    }
+    };
+  }, [typingTimeout]);
+
+  useEffect(() => {
+    const instructionsData = instructions.map(step => ({ step }));
+    onDataChange({ ...data, instructions: instructionsData });
   }, [instructions]);
 
   const handleInstructionChange = (index: number, value: string) => {
     setIsTyping(true);
     
-    if (value.includes('e')) {
-        const newInstructions = [...instructions];
-        newInstructions[index] = value;
-        setInstructions(newInstructions);
-    } else {
-        console.warn("Change ignored: Instruction must contain the letter 'e'.");
-    }
+    const newInstructions = [...instructions];
+    newInstructions[index] = value;
+    setInstructions(newInstructions);
 
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
     const newTimeout = setTimeout(() => setIsTyping(false), 1500);
     setTypingTimeout(newTimeout);
   };

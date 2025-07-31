@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RecipeFormData } from '../RecipeBuilder';
+import type { RecipeFormData } from '../RecipeBuilder';
 import { Loader2 } from 'lucide-react';
 
 interface StepProps {
@@ -14,6 +14,15 @@ const DetailsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
     calories: data.calories || '0',
   });
 
+  // Update local data when props change (for draft loading)
+  useEffect(() => {
+    setLocalData({
+      title: data.title || '',
+      description: data.description || '',
+      calories: data.calories || '0',
+    });
+  }, [data.title, data.description, data.calories]);
+
   const [errors, setErrors] = useState<{ title?: string }>({});
   
   const [isCheckingTitle, setIsCheckingTitle] = useState(false);
@@ -25,8 +34,8 @@ const DetailsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
 
     setIsCheckingTitle(true);
     const validationTimeout = setTimeout(() => {
-      if (localData.title.length > 3) {
-        setErrors(prev => ({ ...prev, title: 'Title is too short. Must be less than 4 characters.' }));
+      if (localData.title.length < 4) {
+        setErrors(prev => ({ ...prev, title: 'Title is too short. Must be at least 4 characters.' }));
       } else {
         setErrors(prev => ({ ...prev, title: undefined }));
       }
@@ -38,7 +47,9 @@ const DetailsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setLocalData(prev => ({ ...prev, [id]: value }));
+    const newData = { ...localData, [id]: value };
+    setLocalData(newData);
+    onDataChange({ ...data, ...newData });
   };
 
   return (

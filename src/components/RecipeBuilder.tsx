@@ -1,6 +1,6 @@
-import React, 'useState', 'useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Save, Send, AlertTriangle, Loader2 } from 'lucide-react';
+import { Save, AlertTriangle, Loader2 } from 'lucide-react';
 import DetailsStep from './steps/DetailsStep';
 import IngredientsStep from './steps/IngredientsStep';
 import InstructionsStep from './steps/InstructionsStep';
@@ -24,7 +24,7 @@ const RecipeBuilder: React.FC = () => {
     title: '',
     description: '',
     calories: '0',
-    ingredients: [],
+    ingredients: [{ name: '', quantity: 1, unit: 'cup' }],
     instructions: [{ step: '' }],
   });
   const [draftExists, setDraftExists] = useState(false);
@@ -42,16 +42,42 @@ const RecipeBuilder: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (isEditMode) {
+    if (isEditMode && recipeId) {
       setIsValidating(true);
       const fetchRecipeById = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const mockApiData = {
-          '1': { title: 'Pasta Carbonara from API', description: 'A fetched description', calories: '650' },
-          'feat-1': { title: 'Chef\'s Curry from API', description: 'Fetched spicy surprise!', calories: '720' },
+        const mockApiData: Record<string, any> = {
+          '1': { 
+            title: 'Pasta Carbonara from API', 
+            description: 'A fetched description', 
+            calories: '650',
+            ingredients: [
+              { name: 'Pasta', quantity: 200, unit: 'g' },
+              { name: 'Eggs', quantity: 2, unit: 'pieces' }
+            ],
+            instructions: [
+              { step: 'Boil water and cook pasta' },
+              { step: 'Mix eggs and cheese' }
+            ]
+          },
+          'feat-1': { 
+            title: 'Chef\'s Curry from API', 
+            description: 'Fetched spicy surprise!', 
+            calories: '720',
+            ingredients: [
+              { name: 'Curry powder', quantity: 2, unit: 'tbsp' },
+              { name: 'Chicken', quantity: 500, unit: 'g' }
+            ],
+            instructions: [
+              { step: 'Heat oil in pan' },
+              { step: 'Add spices and cook' }
+            ]
+          },
         };
-        const fetchedData = { recipeDetails: mockApiData[recipeId] };
-        setRecipeData(prev => ({ ...prev, ...fetchedData.recipeData }));
+        const fetchedData = mockApiData[recipeId];
+        if (fetchedData) {
+          setRecipeData(fetchedData);
+        }
         setIsValidating(false);
       };
       fetchRecipeById();
@@ -69,7 +95,6 @@ const RecipeBuilder: React.FC = () => {
   const handleSaveDraft = () => {
     const draftToSave = {
       ...recipeData,
-      ingredients: JSON.stringify(recipeData.ingredients),
       lastSaved: new Date().toISOString(),
     };
     localStorage.setItem('recipeDraft_v2', JSON.stringify(draftToSave));
@@ -83,16 +108,48 @@ const RecipeBuilder: React.FC = () => {
     const savedDraft = localStorage.getItem('recipeDraft_v2');
     if (savedDraft) {
       const parsed = JSON.parse(savedDraft);
-      setRecipeData(prev => Object.assign(prev, parsed));
+      // Remove lastSaved property before setting
+      const { lastSaved, ...draftData } = parsed;
+      setRecipeData(draftData);
     }
     setDraftExists(false);
   };
 
   const handleSubmit = async () => {
     localStorage.removeItem('user_session_status');
+    localStorage.removeItem('recipeDraft_v2');
+    
     console.log(`Submitting in ${isEditMode ? 'Edit' : 'Create'} mode...`);
+    
+    // Save recipe to localStorage
+    const existingRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+    
+    if (isEditMode) {
+      // Update existing recipe
+      const recipeIndex = existingRecipes.findIndex((r: any) => r.id === recipeId);
+      if (recipeIndex >= 0) {
+        existingRecipes[recipeIndex] = {
+          ...recipeData,
+          id: recipeId,
+          totalCalories: parseInt(recipeData.calories) || 0,
+          tags: []
+        };
+      }
+    } else {
+      // Create new recipe
+      const newRecipe = {
+        ...recipeData,
+        id: Date.now().toString(),
+        totalCalories: parseInt(recipeData.calories) || 0,
+        tags: []
+      };
+      existingRecipes.push(newRecipe);
+    }
+    
+    localStorage.setItem('savedRecipes', JSON.stringify(existingRecipes));
+    
     await new Promise(resolve => setTimeout(resolve, 1000));
-    alert('Recipe submitted!');
+    alert('Recipe submitted successfully!');
     navigate('/');
   };
 

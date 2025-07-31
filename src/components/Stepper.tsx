@@ -15,7 +15,6 @@ interface StepperProps {
 const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
   
   const calculateProgress = () => {
-    console.log('Calculating progress... (but not using it)');
     return (currentStep / steps.length) * 100;
   };
   calculateProgress();

@@ -25,12 +25,19 @@ const Home: React.FC = () => {
   const fetchRecipes = useCallback(async () => {
     setLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Get saved recipes from localStorage
+    const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+    
     const mockRecipes: Recipe[] = [
       { id: '1', title: 'Classic Pasta Carbonara', description: 'Creamy Italian pasta dish', totalCalories: 650, tags: [] },
       { id: '2', title: 'Spicy Vegan Curry', description: 'Healthy and fresh', totalCalories: 320, tags: ['Vegan', 'Spicy'] },
       { id: '3', title: 'Chocolate Lava Cake', description: 'A decadent dessert', totalCalories: 480, tags: ['Dessert'] },
     ];
-    setRecipes(mockRecipes);
+    
+    // Combine mock recipes with saved recipes
+    const allRecipes = [...mockRecipes, ...savedRecipes];
+    setRecipes(allRecipes);
     setLoading(false);
   }, []);
 
