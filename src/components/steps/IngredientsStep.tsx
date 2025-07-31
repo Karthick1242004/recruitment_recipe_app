@@ -24,10 +24,16 @@ const IngredientsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
     }
   }, []);
 
+  // Load data when it becomes available (edit mode)
+  useEffect(() => {
+    if (data.ingredients && Array.isArray(data.ingredients) && data.ingredients.length > 0) {
+      setIngredients(data.ingredients);
+    }
+  }, [data.ingredients?.length, data.title]); // Depend on length and title to detect new recipe loads
+
   // Update errors when ingredients change
   useEffect(() => {
     if (!Array.isArray(ingredients)) {
-      console.error('Ingredients is not an array:', ingredients);
       setIngredients([{ name: '', quantity: 1, unit: 'cup' }]);
       return;
     }
@@ -44,7 +50,7 @@ const IngredientsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
   // Update parent component when ingredients change
   useEffect(() => {
     if (isInitialized.current && Array.isArray(ingredients)) {
-      onDataChange({ ...data, ingredients });
+      onDataChange((prevData: any) => ({ ...prevData, ingredients }));
     }
   }, [ingredients]);
 
@@ -69,7 +75,6 @@ const IngredientsStep: React.FC<StepProps> = ({ data, onDataChange }) => {
 
   // Safety check before rendering
   if (!Array.isArray(ingredients)) {
-    console.error('Ingredients is not an array in render:', ingredients);
     return (
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">Ingredients</h2>

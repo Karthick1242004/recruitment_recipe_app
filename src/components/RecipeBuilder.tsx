@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, AlertTriangle, Loader2 } from 'lucide-react';
 import DetailsStep from './steps/DetailsStep';
@@ -46,6 +46,18 @@ const RecipeBuilder: React.FC = () => {
       setIsValidating(true);
       const fetchRecipeById = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // First, try to load from localStorage (saved recipes)
+        const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+        const savedRecipe = savedRecipes.find((recipe: any) => recipe.id === recipeId);
+        
+        if (savedRecipe) {
+          setRecipeData(savedRecipe);
+          setIsValidating(false);
+          return;
+        }
+        
+        // Fallback to mock data for default recipes
         const mockApiData: Record<string, any> = {
           '1': { 
             title: 'Pasta Carbonara from API', 
@@ -153,12 +165,24 @@ const RecipeBuilder: React.FC = () => {
     navigate('/');
   };
 
+  const handleDataChange = useCallback((updateFn: any) => {
+    if (typeof updateFn === 'function') {
+      setRecipeData(updateFn);
+    } else {
+      setRecipeData(updateFn);
+    }
+  }, []);
+
+  const stepProps = useMemo(() => ({
+    data: recipeData,
+    onDataChange: handleDataChange
+  }), [recipeData, handleDataChange]);
+
   const renderCurrentStep = () => {
-    const props = { data: recipeData, onDataChange: setRecipeData };
     switch (currentStep) {
-      case 1: return <DetailsStep {...props} />;
-      case 2: return <IngredientsStep {...props} />;
-      case 3: return <InstructionsStep {...props} />;
+      case 1: return <DetailsStep {...stepProps} />;
+      case 2: return <IngredientsStep {...stepProps} />;
+      case 3: return <InstructionsStep {...stepProps} />;
       default: return null;
     }
   };
